@@ -1,0 +1,252 @@
+"use strict";
+/**
+* @author Daut Molahasanov
+* @version 1.0.0
+* @description JavaScript Sitefinity Modal
+*
+* @class
+* ModalJS
+*/
+
+
+; (function (window) {
+  var modalType = null,
+    urlOrId = null,
+    modalBodyHtml = null,
+    modal = null,
+    modalCloseBtn = null,
+    credits = null,
+    modalTemplate = '' +
+      '<div class="multimedia-modal" tabindex="-1" role="dialog" aria-hidden="true">' +
+      '<div class="modal-dialog" role="document">' +
+      '<!--Content-->' +
+      '<div class="modal-content">' +
+      '<span class="modal-close_btn" aria-label="Close Video Modal Box" ></span>' +
+      '<!--Body-->' +
+      '<div class="modal-body">' +
+
+      '</div>' +
+      '</div>' +
+      '<!--/.Content-->' +
+      '</div>' +
+      '</div>';
+
+
+  /**
+   *  Contructor
+   */
+  function ModalJS(_modalType, _urlOrId, _credits) {
+    if (typeof _modalType == "string" && _urlOrId != undefined) {
+      modalType = _modalType;
+      urlOrId = _urlOrId;
+      credits = _credits;
+      _init();
+    }
+  }
+
+  /**
+   * _init method
+   */
+  function _init() {
+    modalBodyHtml = _createInnerModal();
+    modal = _createModal(modalBodyHtml);
+    document.body.appendChild(modal);
+    FB.XFBML.parse();
+    modalCloseBtn = document.querySelector(".modal-close_btn");
+
+    modal.addEventListener('click', function (e) {
+      if (e.target.className == "modal-dialog") {
+        _destroyModal(modal);
+      }
+    });
+    
+    modalCloseBtn.addEventListener('click', function () {
+      _destroyModal(modal);
+    })
+  };
+
+  /**
+   * get the modal body HTML for YouTube
+   * @param  {String}
+   * @return {String} HTML template
+   */
+  function _YTmodalHtml(YTid) {
+    var YTlink = '';
+    var rx = /^.*(?:(?:youtu\.be\/|v\/|vi\/|u\/\w\/|embed\/)|(?:(?:watch)?\?v(?:i)?=|\&v(?:i)?=))([^#\&\?]*).*/;
+    var id = YTid.match(rx);
+
+    if (id && id.length >= 2) {
+      YTlink = "https://www.youtube.com/embed/" + id[1];
+    } else {
+      YTlink = "https://www.youtube.com/embed/" + YTid;
+    }
+
+    return '' +
+      '<div class="youtube-video">' +
+      '<iframe src="' + YTlink + '?autoplay=1" frameborder="0" allow="autoplay; fullscreen"></iframe>' +
+      '</div>'
+      ;
+  }
+
+  /**
+   * get the modal body HTML for Facebook
+   * @param  {String}
+   * @return {String} HTML template
+   */
+  function _FBmodalHtml(FBid) {
+    return '' +
+      '<div class="facebook-video">' +
+      '<iframe src="https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Fwatch%2F?v=' + FBid +
+      '&autoplay=true" width="100%" height="100%" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowTransparency="true" allow="autoplay; fullscreen"></iframe>' +
+      '</div>'
+      ;
+  }
+
+  /**
+   * get the modal body HTML for Vimeo
+   * @param  {String}
+   * @return {String} HTML template
+   */
+  function _VMmodalHtml(VMid) {
+    return '' +
+      '<div class="vimeo-video">' +
+      '<iframe src="https://player.vimeo.com/video/' + VMid +
+      '?autoplay=1" width="100%" height="100%" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>' +
+      '</div>'
+      ;
+  }
+
+  /**
+   * get the modal body HTML for Terrance Video
+   * @param  {String}
+   * @return {String} HTML template
+   */
+  function _terVidModalHtml(terranceVidUrl) {
+    return '' +
+      '<div class="embed-responsive terrance_video">' +
+      '<video class="embed-responsive-item" controls autoplay>' +
+      '<source src="' + terranceVidUrl + '">' +
+      'Your browser does not support the video tag.'+
+      '</video>' +
+      '</div>'
+      ;
+  }
+
+  /**
+   * get the modal body HTML for Terrance podcast
+   * @param  {String}
+   * @return {String} HTML template
+   */
+  function _terAudModalHtml(terranceAudUrl) {
+    return '' +
+      '<div class="terrance_audio">' +
+      '<audio class="embed-responsive-item" controls autoplay>' +
+      '<source src="' + terranceAudUrl + '">' +
+      'Your browser does not support the audio tag.'+
+      '</audio>' +
+      '</div>'
+      ;
+  }
+
+  function _picModalHtml(picUrl, credits){
+    if(credits.Author || credits.description){
+      return '' +
+      '<div class="picture_modal">' +
+       '<img src="' + picUrl + '">' +
+       '<p class="credits">' + credits.Author + '. ' + credits.Description +'</p>' +
+      '</div>';
+    }else{
+      return '' +
+      '<div class="picture_modal">' +
+       '<img src="' + picUrl + '">' +
+      '</div>';
+    }
+
+  }
+
+  /**
+   * Convert HTML string template to DOM Node
+   * @param  {String}
+   * @return {Object} DOM Node
+   */
+  function _htmlToElement(htmlString) {
+    var template = document.createElement('template');
+    htmlString = htmlString.trim();
+    template.innerHTML = htmlString;
+    return template.firstChild || template.content.firstChild;
+  }
+
+  /**
+   * Convert HTML string template to DOM Node
+   * @param  {String}
+   * @return {Object} DOM Node
+   */
+  function _createModal(modalBodyHtml) {
+    var modalShell = _htmlToElement(modalTemplate);
+    var modalInner = _htmlToElement(modalBodyHtml);
+    modalShell.querySelector(".modal-body").appendChild(modalInner);
+
+    return modalShell;
+  }
+
+  /**
+   * get the modal body html
+   * @return {Object} DOM node
+   */
+  function _createInnerModal() {
+    switch (modalType) {
+      case "YoutubeVideo": {
+        return _YTmodalHtml(urlOrId);
+      }
+
+      case "FacebookVideo": {
+        return _FBmodalHtml(urlOrId);
+      }
+
+      case "VimeoVideo": {
+        return _VMmodalHtml(urlOrId);
+      }
+
+      case "TerranceVideo": {
+        return _terVidModalHtml(urlOrId);
+      }
+
+      case "TerranceAudio": {
+        return _terAudModalHtml(urlOrId);
+      }
+
+      case "Picture": {
+        return _picModalHtml(urlOrId, credits);
+      }
+
+      default:
+        console.log("default", modalType);
+        break;
+    }
+  }
+
+  /**
+   * get the modal body html
+   * @return {Void}
+   */
+  function _destroyModal(_modal) {
+    if (_modal) {
+
+      // Remove Polyfill
+      if (!('remove' in Element.prototype)) {
+        Element.prototype.remove = function() {
+            if (this.parentNode) {
+                this.parentNode.removeChild(this);
+            }
+        };
+    }
+      _modal.remove();
+    }
+  }
+
+  ModalJS.prototype.destroyModal = _destroyModal(modal);
+
+  //-- return the window object
+  window.ModalJS = ModalJS;
+
+})(window);
